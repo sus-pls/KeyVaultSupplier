@@ -1,0 +1,33 @@
+# Log in to Azure and set the context
+az login
+Set-AzContext "ENTER-YOUR-SUBSCIPTION-ID-HERE"
+
+# Set the Key Vault name
+$keyVaultName = "ENTER-YOUR-KEY-VAULT-NAME-HERE"
+
+# Prompt the user for the Secret Name
+$secretName = Read-Host -Prompt "Enter the Secret Name"
+
+# Add the System.Windows.Forms assembly
+Add-Type -AssemblyName System.Windows.Forms
+
+# Create and configure the OpenFileDialog
+$OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+$OpenFileDialog.InitialDirectory = "C:\Users"
+$OpenFileDialog.Title = "Select your SSH private key file"
+
+# Show the OpenFileDialog and get the result
+$DialogResult = $OpenFileDialog.ShowDialog()
+
+if ($DialogResult -eq [System.Windows.Forms.DialogResult]::OK) {
+    $sshPrivateKeyFile = $OpenFileDialog.FileName
+} else {
+    Write-Host "No file selected. Exiting script." -ForegroundColor Red
+    exit
+}
+
+# Read the SSH Private Key content
+$sshPrivateKey = Get-Content -Path $sshPrivateKeyFile -Raw
+
+# Store the SSH Private Key as a secret in Azure Key Vault
+Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $secretName -SecretValue (ConvertTo-SecureString $sshPrivateKey -AsPlainText -Force)
